@@ -1,0 +1,27 @@
+:root { color-scheme: light dark; --bg: #fff; --fg: #1c1e21; --card: #f4f6f8; --accent: #e8590c; --ok: #1f9d55; }
+@media (prefers-color-scheme: dark) { :root { --bg: #15171a; --fg: #eceff1; --card: #22262b; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+main { max-width: 960px; margin: 0 auto; padding: 16px; }
+header a { font-weight: 700; font-size: 1.25rem; color: inherit; text-decoration: none; }
+a { color: var(--accent); }
+.card { background: var(--card); padding: 16px; border-radius: 8px; display: grid; gap: 12px; max-width: 420px; }
+.bar { text-align: right; font-size: .9rem; }
+label { display: grid; gap: 4px; }
+input, textarea { font: inherit; padding: 8px; border-radius: 6px; border: 1px solid #8886; background: var(--bg); color: var(--fg); }
+textarea { font-family: ui-monospace, Consolas, monospace; width: 100%; min-height: 260px; tab-size: 2; }
+button { font: inherit; padding: 8px 16px; border-radius: 6px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #4c9aff; outline-offset: 2px; }
+button.link { background: none; color: var(--accent); padding: 0; text-align: left; }
+button:disabled { opacity: .6; cursor: wait; }
+.lessons { list-style: none; padding: 0; display: grid; gap: 8px; }
+.lessons a { display: block; background: var(--card); padding: 12px 16px; border-radius: 8px; text-decoration: none; color: inherit; }
+.done::after { content: ' ✓'; color: var(--ok); font-weight: 700; }
+.lesson { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 800px) { .lesson { grid-template-columns: 1fr; } }
+canvas { width: 100%; max-width: 400px; height: auto; border: 1px solid #8886; border-radius: 8px; }
+.ok { color: var(--ok); font-weight: 700; }
+.err { color: #d33; }
+pre { background: var(--card); padding: 8px; border-radius: 6px; white-space: pre-wrap; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid #8884; padding: 6px 8px; text-align: left; }
