@@ -1,72 +1,82 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import AuthGate from '../../../components/AuthGate';
-import Simulator from '../../../components/Simulator';
-import { getLesson, randomStart } from '../../../lib/lessons';
-import { runInWorker } from '../../../lib/run-in-worker';
-import { store } from '../../../lib/store';
+import Player from '../../../components/Player';
+import Celebrate from '../../../components/Celebrate';
+import Icon from '../../../components/Icon';
+import { useGame, useNow } from '../../../components/Game';
+import { getLesson, getUnit, lessonOrder } from '../../../lib/curriculum';
+import { lessonStatus, startLesson, finishLesson, batteryNow, streakOf } from '../../../lib/game';
 
-function Lesson({ lesson, user }) {
-  const [code, setCode] = useState(lesson.starter);
-  const [loaded, setLoaded] = useState(false);
-  const [wasDone, setWasDone] = useState(false);
-  const [result, setResult] = useState(null);
-  const [running, setRunning] = useState(false);
-  const [saveErr, setSaveErr] = useState('');
+function Lesson({ lesson }) {
+  const { state, apply } = useGame();
+  const now = useNow();
+  const unit = getUnit(lesson.unitId);
+  // Decided once on entry: finishing the lesson must not flip this screen to something else.
+  const [entry] = useState(() => ({ status: lessonStatus(state, lessonOrder, lesson.id), battery: batteryNow(state, new Date()).level }));
+  const [phase, setPhase] = useState('play'); // play | done | flat
+  const [summary, setSummary] = useState(null);
+  const blocked = entry.status === 'locked' || entry.battery === 0;
 
   useEffect(() => {
-    store.loadLesson(user, lesson.id).then((data) => {
-      if (data) { setCode(data.code || lesson.starter); setWasDone(data.completed); }
-      setLoaded(true);
-    });
-  }, [lesson, user]);
+    if (!blocked) apply((s) => startLesson(s, lesson.id));
+  }, [apply, lesson.id, blocked]);
 
-  async function run() {
-    setRunning(true);
-    const r = await runInWorker(code, lesson, randomStart(lesson));
-    setResult(r);
-    setRunning(false);
-    const completed = wasDone || r.passed;
-    const error = await store.saveLesson(user, lesson.id, code, completed);
-    setSaveErr(error ? `Could not save progress: ${error}` : '');
-    if (!error) setWasDone(completed);
-  }
-
-  return (
-    <>
-      <h1>{lesson.title}</h1>
-      <p>{lesson.text}</p>
-      <div className="lesson">
-        <div>
-          <label>
-            Your code (JavaScript)
-            <textarea value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} disabled={!loaded} />
-          </label>
-          <p>
-            <button onClick={run} disabled={running || !loaded}>{running ? 'Running…' : '▶ Run'}</button>{' '}
-            <button className="link" onClick={() => setCode(lesson.starter)}>Reset code</button>
-          </p>
-          <div aria-live="polite">
-            {result?.error && <p className="err">Error: {result.error}</p>}
-            {result && !result.error && (result.passed
-              ? <p className="ok">Goal reached! 🎉</p>
-              : <p>Not there yet.{result.bumped ? ' You bumped into something.' : ''}</p>)}
-            {wasDone && !result?.passed && <p className="ok">Already completed ✓</p>}
-            {saveErr && <p className="err">{saveErr}</p>}
-            {result?.logs?.length > 0 && <pre>{result.logs.join('\n')}</pre>}
-          </div>
-        </div>
-        <Simulator lesson={lesson} frames={result?.frames ?? []} />
+  if (entry.status === 'locked') {
+    return (
+      <div className="stack">
+        <h1><Icon name="lock" /> {lesson.title} is locked</h1>
+        <p>Finish the lesson before it first.</p>
+        <p><Link href="/" className="btn">Back to the path</Link></p>
       </div>
-      <p><a href="/">← All lessons</a></p>
-    </>
+    );
+  }
+  if (entry.battery === 0 || phase === 'flat') {
+    const b = batteryNow(state, now);
+    return (
+      <div className="stack">
+        <h1>Battery flat</h1>
+        <p>Wrong answers drain the battery. {b.level === 0
+          ? `One cell comes back in ${Math.ceil(b.nextMs / 60000)} min, or recharge now with a practice session.`
+          : 'A cell has recharged: you can start again.'}</p>
+        <div className="row">
+          <Link href="/practice" className="btn"><Icon name="refresh" />Practice to recharge</Link>
+          <Link href="/" className="btn ghost">Back to the path</Link>
+        </div>
+      </div>
+    );
+  }
+  if (phase === 'done') {
+    const banners = [];
+    if (summary.leveledUp) banners.push(['bolt', `Level up! You are now level ${summary.level}.`]);
+    if (summary.unitDone) banners.push(['chip', `Unit complete: ${unit.title}. Badge earned: ${unit.badge?.name ?? unit.title}.`]);
+    return (
+      <Celebrate
+        title={lesson.boss ? 'Boss beaten!' : 'Lesson complete'}
+        gold={summary.mistakes === 0}
+        tiles={[['XP earned', `+${summary.earned}`], ['Day streak', streakOf(state, now)], ['Mistakes', summary.mistakes]]}
+        banners={banners}
+      />
+    );
+  }
+  return (
+    <Player
+      steps={lesson.steps}
+      mode="lesson"
+      onFlat={() => setPhase('flat')}
+      onDone={({ mistakes, hints }) => {
+        const out = apply((s, t) => finishLesson(s, lesson, unit.lessons.map((l) => l.id), { mistakes, hints }, t));
+        setSummary({ ...out, mistakes });
+        setPhase('done');
+      }}
+    />
   );
 }
 
 export default function Page() {
   const { id } = useParams();
   const lesson = getLesson(id);
-  if (!lesson) return <p>Lesson not found. <a href="/">Back</a></p>;
-  return <AuthGate>{(user) => <Lesson key={lesson.id} lesson={lesson} user={user} />}</AuthGate>;
+  if (!lesson) return <p>Lesson not found. <Link href="/">Back to the path</Link></p>;
+  return <Lesson key={lesson.id} lesson={lesson} />;
 }
