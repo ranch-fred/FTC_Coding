@@ -5,7 +5,7 @@ import AuthGate from '../../../components/AuthGate';
 import Simulator from '../../../components/Simulator';
 import { getLesson, randomStart } from '../../../lib/lessons';
 import { runInWorker } from '../../../lib/run-in-worker';
-import { supabase } from '../../../lib/supabase';
+import { store } from '../../../lib/store';
 
 function Lesson({ lesson, user }) {
   const [code, setCode] = useState(lesson.starter);
@@ -16,11 +16,11 @@ function Lesson({ lesson, user }) {
   const [saveErr, setSaveErr] = useState('');
 
   useEffect(() => {
-    supabase.from('progress').select('code,completed').eq('lesson_id', lesson.id).maybeSingle().then(({ data }) => {
+    store.loadLesson(user, lesson.id).then((data) => {
       if (data) { setCode(data.code || lesson.starter); setWasDone(data.completed); }
       setLoaded(true);
     });
-  }, [lesson]);
+  }, [lesson, user]);
 
   async function run() {
     setRunning(true);
@@ -28,10 +28,8 @@ function Lesson({ lesson, user }) {
     setResult(r);
     setRunning(false);
     const completed = wasDone || r.passed;
-    const { error } = await supabase
-      .from('progress')
-      .upsert({ user_id: user.id, lesson_id: lesson.id, code, completed, updated_at: new Date().toISOString() });
-    setSaveErr(error ? `Could not save progress: ${error.message}` : '');
+    const error = await store.saveLesson(user, lesson.id, code, completed);
+    setSaveErr(error ? `Could not save progress: ${error}` : '');
     if (!error) setWasDone(completed);
   }
 

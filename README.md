@@ -2,7 +2,11 @@
 
 Teammates sign in, write robot code in the browser, watch a simulated robot run it, and progress is saved.
 
-## Setup
+## Demo mode (no account needed)
+
+`npm install`, then `npm run dev`. With no `.env.local`, the site skips sign-in and saves progress, XP and streak in the browser (`localStorage`). The mentor view shows sample teammates.
+
+## Setup with Supabase (real accounts, shared progress)
 
 1. Create a free project at supabase.com.
 2. SQL Editor: paste and run `supabase/schema.sql`.
@@ -13,7 +17,11 @@ Teammates sign in, write robot code in the browser, watch a simulated robot run 
 
 ## Add a lesson
 
-Append an object to `lib/lessons.js` (start pose, obstacles, goal rectangle). Add a test to `tests/sim.test.js`. `npm test` runs the simulator tests.
+Append an object to `lib/lessons.js` (start pose, obstacles, goal rectangle). Add a test to `tests/sim.test.js`. `npm test` runs the simulator and storage tests.
+
+## Storage
+
+Pages read and write progress only through `lib/store.js`. It picks Supabase when both env keys are set, otherwise `lib/store-demo.js` (localStorage).
 
 ## Robot API (JavaScript)
 

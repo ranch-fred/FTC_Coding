@@ -2,18 +2,17 @@
 import { useEffect, useState } from 'react';
 import AuthGate from '../../components/AuthGate';
 import { lessons } from '../../lib/lessons';
-import { supabase } from '../../lib/supabase';
+import { store, demo } from '../../lib/store';
 
 function Admin() {
-  const [rows, setRows] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(null);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    supabase.from('admins').select('email').maybeSingle().then(({ data }) => setIsAdmin(Boolean(data)));
-    supabase.from('progress').select('email,lesson_id,completed,updated_at').then(({ data }) => setRows(data ?? []));
+    store.adminData().then(setData);
   }, []);
 
-  if (isAdmin === null || rows === null) return <p>Loading…</p>;
+  if (!data) return <p>Loading…</p>;
+  const { isAdmin, rows } = data;
   if (!isAdmin) return <p role="alert">Mentors only. Your email is not in the admins table.</p>;
 
   const byUser = new Map();
@@ -26,6 +25,7 @@ function Admin() {
   return (
     <>
       <h1>Team progress</h1>
+      {demo && <p>Sample data. Teammates below are made up; the {'"you"'} row is this browser.</p>}
       <table>
         <thead>
           <tr><th>Teammate</th>{lessons.map((l) => <th key={l.id}>{l.title}</th>)}<th>Last active</th></tr>

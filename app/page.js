@@ -2,18 +2,17 @@
 import { useEffect, useState } from 'react';
 import AuthGate from '../components/AuthGate';
 import { lessons } from '../lib/lessons';
-import { supabase } from '../lib/supabase';
+import { store } from '../lib/store';
 
-function Home() {
-  const [done, setDone] = useState(new Set());
+function Home({ user }) {
+  const [{ done, xp, streak }, setSummary] = useState({ done: new Set(), xp: 0, streak: 0 });
   useEffect(() => {
-    supabase.from('progress').select('lesson_id').eq('completed', true).then(({ data }) =>
-      setDone(new Set((data ?? []).map((r) => r.lesson_id))),
-    );
-  }, []);
+    store.summary(user).then(setSummary);
+  }, [user]);
   return (
     <>
       <h1>Lessons</h1>
+      <p className="stats">{xp} XP · {streak}-day streak · {done.size}/{lessons.length} lessons</p>
       <ul className="lessons">
         {lessons.map((l) => (
           <li key={l.id}>
@@ -27,5 +26,5 @@ function Home() {
 }
 
 export default function Page() {
-  return <AuthGate>{() => <Home />}</AuthGate>;
+  return <AuthGate>{(user) => <Home user={user} />}</AuthGate>;
 }
