@@ -34,6 +34,7 @@ With no `.env.local` the site runs in **demo mode**: no sign-in, progress saved 
 | `lib/sim.js` | The robot simulator. Student code runs in a Web Worker with a 2 second timeout (`lib/run-in-worker.js`). |
 | `lib/store.js` | The only module that reads or writes saved data. Picks Supabase or `lib/store-demo.js` (localStorage). |
 | `components/Player.js`, `components/steps.js` | The lesson player and one component per step type. |
+| `lib/admin.js` | Mentor view maths: team summary and hardest questions. |
 | `app/` | Pages: path (`/`), lesson, practice, profile, leaderboard, mentor view (`/admin`). |
 | `app/globals.css` | Design tokens (colours, type scale) and all styles. Dark by default, light theme optional. |
 | `tests/` | Tests, plus `solutions.js`: a reference solution for every programming step. |
@@ -118,6 +119,20 @@ The simulator is JavaScript with an FTC-shaped API. The full list with descripti
 - TeleOp: define `function loop(gamepad) { ... }`. It is called 20 times per simulated second.
 
 The field is 200 x 200 cm. x goes right, y goes up, heading 0 points up. Full power is 50 cm per second.
+
+## Mentor view
+
+`/admin` (link at the bottom of the path). With Supabase, only emails in the `admins` table get data; in demo mode it shows sample teammates.
+
+- **Team**: last active (red after 7 idle days), streak, level, XP, XP this week, lessons finished, gold lessons.
+- **Progress by unit**: lessons finished per unit for every teammate.
+- **Progress by lesson**: open a teammate to see every lesson as not started, started, done or gold.
+- **Hardest questions**: the quiz questions with the most wrong answers across the team, with how many teammates missed each.
+- **Course content**: every unit with its file name, and a **preview** link per lesson that opens it without locks and without recording answers.
+
+The numbers are worked out in `lib/admin.js` from the same saved state the students use.
+
+Editing lessons is file-based: change the unit file named in the Course content list, run `npm test`, commit, deploy.
 
 ## Security notes
 

@@ -13,8 +13,9 @@ import { recordAnswer, drainBattery, batteryNow, HINT_COST } from '../lib/game';
 const QUIZ = { choice: Choice, order: Order, blank: Blank, predict: Predict, match: Match };
 
 // mode 'lesson': wrong answers drain the battery. mode 'practice': they do not.
+// mode 'preview' (mentors): nothing is recorded. exitTo = where the close button goes.
 // onDone({ mistakes, hints, firstTry }) runs after the last step. onFlat() runs if the battery hits zero.
-export default function Player({ steps, mode, onDone, onFlat }) {
+export default function Player({ steps, mode, onDone, onFlat, exitTo = '/' }) {
   const { state, apply } = useGame();
   const [queue, setQueue] = useState(steps);
   const [i, setI] = useState(0);
@@ -38,7 +39,7 @@ export default function Player({ steps, mode, onDone, onFlat }) {
     const first = !t.seen.has(step.id);
     t.seen.add(step.id);
     if (r.correct) { if (first) t.firstTry++; } else { t.mistakes++; setQueue((q) => [...q, step]); }
-    apply((s, now) => {
+    if (mode !== 'preview') apply((s, now) => {
       const next = recordAnswer(s, step.id, r.correct, now, { practice: mode === 'practice' });
       return !r.correct && mode === 'lesson' ? drainBattery(next, now) : next;
     });
@@ -73,7 +74,7 @@ export default function Player({ steps, mode, onDone, onFlat }) {
   return (
     <form className="player" onSubmit={submit}>
       <div className="player-top">
-        <Link href="/" className="icon-btn" aria-label="Leave and go back to the path"><Icon name="x" /></Link>
+        <Link href={exitTo} className="icon-btn" aria-label="Leave"><Icon name="x" /></Link>
         <div className="meter info" role="progressbar" aria-label="Progress" aria-valuemin={0} aria-valuemax={queue.length} aria-valuenow={i}>
           <i style={{ width: `${(i / queue.length) * 100}%` }} />
         </div>

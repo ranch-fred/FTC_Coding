@@ -43,7 +43,7 @@ function Frame({ children }) {
   const { state, saveError } = useGame();
   const now = useNow();
   const path = usePathname();
-  const inLesson = path.startsWith('/lesson');
+  const inLesson = path.startsWith('/lesson') || path.startsWith('/admin/preview');
   return (
     <>
       <header className="topbar">

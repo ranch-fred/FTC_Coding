@@ -205,6 +205,21 @@ main { max-width: 960px; margin: 0 auto; padding: 16px 16px 96px; }
 table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
 th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; white-space: nowrap; }
 th { color: var(--muted); font-weight: 600; }
+td.warn { color: var(--danger); font-weight: 600; }
+.matrix td, .matrix th { text-align: center; }
+.matrix td:first-child, .matrix th:first-child { text-align: left; }
+.matrix td.full { color: var(--ok); font-weight: 700; }
+.matrix td.part { color: var(--text); }
+.matrix td { color: var(--muted); }
+table.wrap td:first-child { white-space: normal; min-width: 220px; }
+.mate summary { cursor: pointer; min-height: 28px; }
+.mate[open] summary { margin-bottom: 12px; }
+.marks { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.marks li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 99px; font-size: var(--fs-xs); color: var(--muted); }
+.marks li.done { border-color: var(--info); color: var(--info); }
+.marks li.gold { border-color: var(--gold); color: var(--gold); }
+.marks li.started { border-style: dashed; color: var(--text); }
+.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .choices { display: flex; gap: 8px; flex-wrap: wrap; border: 0; padding: 0; margin: 0; }
 .choices legend { padding: 0; margin-bottom: 6px; font-weight: 600; }
 .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 99px; cursor: pointer; font-weight: 600; }
