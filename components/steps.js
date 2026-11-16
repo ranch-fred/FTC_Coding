@@ -10,10 +10,12 @@ import { runInWorker } from '../lib/run-in-worker';
 import { randomStart } from '../lib/curriculum';
 import { GRID, blankCount, shuffled } from '../lib/grade';
 import { saveCode } from '../lib/game';
+import { API } from '../lib/api';
 
-// Text with `code` spans marked by backticks.
+// Text with `code` in backticks and **bold** in double stars.
+const bold = (text) => text.split('**').map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
 export function Rich({ text }) {
-  return text.split('`').map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part));
+  return text.split('`').map((part, i) => (i % 2 ? <code key={i}>{part}</code> : <span key={i}>{bold(part)}</span>));
 }
 
 export const KINDS = {
@@ -22,6 +24,7 @@ export const KINDS = {
   order: ['list', 'Put in order'],
   blank: ['code', 'Fill the blank'],
   predict: ['route', 'Predict'],
+  match: ['list', 'Match'],
   fix: ['wrench', 'Fix the bug'],
   code: ['code', 'Write code'],
 };
@@ -32,6 +35,7 @@ export function isReady(step, answer) {
   if (step.type === 'order') return Array.isArray(answer) && answer.length === step.lines.length;
   if (step.type === 'blank') return Array.isArray(answer) && answer.length === blankCount(step) && answer.every((v) => v?.trim());
   if (step.type === 'predict') return Boolean(answer);
+  if (step.type === 'match') return Array.isArray(answer) && answer.length === step.pairs.length && answer.every(Boolean);
   return false;
 }
 
@@ -52,13 +56,73 @@ function Compass() {
   );
 }
 
+const box = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, rx: 8 };
+const txt = { fill: 'currentColor', fontSize: 12, fontFamily: 'var(--mono)', textAnchor: 'middle' };
+
+// Sense, think, act: the loop every robot runs.
+function Cycle() {
+  const nodes = [['Sense', 'sensors', 100, 34], ['Think', 'program', 176, 150], ['Act', 'motors', 24, 150]];
+  return (
+    <svg className="diagram" viewBox="0 0 200 200" role="img" aria-label="A loop: sense with sensors, think with the program, act with motors, then sense again.">
+      <path d="M128 52 162 122M146 166H56M40 122 74 52" fill="none" stroke="#ff8a3d" strokeWidth="3" strokeLinecap="round" />
+      <path d="M162 122l-9-4M162 122l2-10M56 166l8-6M56 166l8 6M74 52l-9 5M74 52l1 10" fill="none" stroke="#ff8a3d" strokeWidth="3" strokeLinecap="round" />
+      {nodes.map(([name, sub, x, y]) => (
+        <g key={name}>
+          <rect x={x - 34} y={y - 22} width="68" height="44" {...box} />
+          <text x={x} y={y - 2} {...txt} fontWeight="700">{name}</text>
+          <text x={x} y={y + 13} {...txt} opacity=".75" fontSize="10">{sub}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// The parts of the FTC control system and how they connect.
+function System() {
+  const parts = [['Sensors', 50], ['Motors', 120], ['Servos', 190]];
+  return (
+    <svg className="diagram" viewBox="0 0 240 200" role="img" aria-label="Gamepads connect to the Driver Station. The Driver Station talks to the Control Hub over Wi-Fi. The Control Hub connects to sensors, motors and servos, and is powered by the battery.">
+      <rect x="10" y="10" width="90" height="34" {...box} /><text x="55" y="31" {...txt}>Gamepads</text>
+      <rect x="140" y="10" width="90" height="34" {...box} /><text x="185" y="31" {...txt}>Driver Station</text>
+      <rect x="70" y="84" width="100" height="40" {...box} stroke="#ff8a3d" strokeWidth="3" /><text x="120" y="108" {...txt} fontWeight="700">Control Hub</text>
+      <rect x="185" y="88" width="48" height="32" {...box} /><text x="209" y="108" {...txt} fontSize="10">Battery</text>
+      <path d="M100 27h40M185 44 140 84M170 104h15M120 124v16M50 140h140M50 140v14M120 140v14M190 140v14" fill="none" stroke="currentColor" strokeWidth="2" opacity=".6" />
+      <text x="176" y="68" {...txt} fontSize="10" opacity=".75">Wi-Fi</text>
+      {parts.map(([name, x]) => (
+        <g key={name}><rect x={x - 32} y="154" width="64" height="32" {...box} /><text x={x} y="174" {...txt}>{name}</text></g>
+      ))}
+    </svg>
+  );
+}
+
+// The three parts of a match, to scale.
+function Timeline() {
+  return (
+    <svg className="diagram" viewBox="0 0 300 110" style={{ maxWidth: 420 }} role="img" aria-label="Match timeline: Autonomous for 30 seconds, then TeleOp for 2 minutes. The last 30 seconds of TeleOp are Endgame.">
+      <rect x="10" y="36" width="56" height="34" fill="#4cc9f0" rx="4" />
+      <rect x="70" y="36" width="164" height="34" fill="#ff8a3d" rx="4" />
+      <rect x="234" y="36" width="56" height="34" fill="#fbbf24" rx="4" />
+      <text x="38" y="58" {...txt} fill="#0b111c" fontWeight="700">Auto</text>
+      <text x="152" y="58" {...txt} fill="#0b111c" fontWeight="700">TeleOp</text>
+      <text x="262" y="58" {...txt} fill="#0b111c" fontWeight="700" fontSize="10">Endgame</text>
+      <text x="38" y="26" {...txt}>30 s</text>
+      <text x="180" y="26" {...txt}>2 min, drivers in control</text>
+      <text x="262" y="88" {...txt} fontSize="10">last 30 s</text>
+      <text x="38" y="88" {...txt} fontSize="10">code only</text>
+    </svg>
+  );
+}
+
+const DIAGRAMS = { compass: Compass, cycle: Cycle, system: System, timeline: Timeline };
+
 function Diagram({ diagram }) {
   // Field diagrams run trusted lesson code (not student code), so the main thread is fine.
   const frames = useMemo(
     () => (diagram.kind === 'field' && diagram.code ? runProgram(diagram.code, diagram.field).frames : undefined),
     [diagram],
   );
-  if (diagram.kind === 'compass') return <Compass />;
+  const Named = DIAGRAMS[diagram.kind];
+  if (Named) return <Named />;
   if (diagram.kind === 'field') return <Simulator field={diagram.field} frames={frames} />;
   return null;
 }
@@ -164,25 +228,70 @@ export function Predict({ step, answer, onAnswer, result }) {
   );
 }
 
+// Match each item on the left with its meaning on the right, using a menu per row.
+export function Match({ step, answer, onAnswer, result, attempt }) {
+  const rights = useMemo(() => shuffled([...new Set(step.pairs.map(([, r]) => r))].sort(), `${step.id}:${attempt}`), [step, attempt]);
+  const values = answer ?? step.pairs.map(() => '');
+  return (
+    <div className="match">
+      {step.pairs.map(([left], i) => (
+        <label key={i} className="match-row">
+          <span className="mono"><Rich text={left} /></span>
+          <select value={values[i]} disabled={Boolean(result)} onChange={(e) => onAnswer(values.map((v, j) => (j === i ? e.target.value : v)))}>
+            <option value="">Choose…</option>
+            {rights.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+const describe = (seg) => {
+  const keys = Object.keys(seg).filter((k) => k !== 'for');
+  return keys.length ? keys.map((k) => `${k} = ${seg[k]}`).join(', ') : 'nothing pressed';
+};
+// What the (simulated) driver does with the gamepad during a TeleOp challenge.
+function Script({ script }) {
+  let t = 0;
+  return (
+    <div>
+      <p className="label">What the driver does</p>
+      <ol className="script">
+        {script.map((seg, i) => {
+          const from = t;
+          t = Math.round((t + seg.for) * 100) / 100;
+          return <li key={i}><span className="mono">{from}–{t} s</span> {describe(seg)}</li>;
+        })}
+      </ol>
+    </div>
+  );
+}
+
 // Editor + simulator. Student code runs in a Web Worker with a timeout (lib/run-in-worker.js).
+// Challenges without a robot start (pure JavaScript practice) show only the output.
 export function CodeStep({ step, onPass, passed }) {
   const { state, apply } = useGame();
   const [code, setCode] = useState(state.code[step.id] ?? step.starter);
   const [run, setRun] = useState(null);
   const [running, setRunning] = useState(false);
+  const f = step.field;
+  const hasField = Boolean(f.start);
 
   async function go() {
     setRunning(true);
     apply((s) => saveCode(s, step.id, code));
-    const r = await runInWorker(code, step.field, randomStart(step.field));
+    const r = await runInWorker(code, f, randomStart(f));
     setRun(r);
     setRunning(false);
     if (r.passed) onPass();
   }
 
   return (
-    <div className="two">
+    <div className={hasField ? 'two' : 'stack'}>
       <div className="stack">
+        {f.script && <Script script={f.script} />}
+        {f.expectLogs && <div><p className="label">Expected output</p><pre>{f.expectLogs.join('\n')}</pre></div>}
         <label>
           Your code (JavaScript)
           <textarea value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} autoCapitalize="off" autoCorrect="off" />
@@ -193,12 +302,28 @@ export function CodeStep({ step, onPass, passed }) {
         </div>
         <div aria-live="polite" className="stack">
           {run?.error && <p className="alert">Error: {run.error}</p>}
-          {run && !run.error && !run.passed && <p>Not in the goal zone yet.{run.bumped ? ' The robot bumped into something.' : ''} Change the code and run again.</p>}
-          {passed && !run?.passed && run && <p className="muted small">You already passed this step.</p>}
-          {run?.logs?.length > 0 && <pre className="logs">{run.logs.join('\n')}</pre>}
+          {run && !run.error && (
+            <ul className="checks">
+              {run.checks.map((c) => (
+                <li key={c.label} className={c.ok ? 'ok' : 'no'}><Icon name={c.ok ? 'check' : 'x'} label={c.ok ? 'Met:' : 'Not met:'} /> {c.label}</li>
+              ))}
+            </ul>
+          )}
+          {run && !run.error && !run.passed && <p>Not solved yet.{run.bumped ? ' The robot bumped into something.' : ''} Change the code and run again.</p>}
+          {passed && run && !run.passed && <p className="muted small">You already passed this step.</p>}
+          {run?.logs?.length > 0 && <div><p className="label">Output</p><pre className="logs">{run.logs.join('\n')}</pre></div>}
         </div>
+        <details className="api">
+          <summary>Robot commands</summary>
+          {API.map(([group, items]) => (
+            <div key={group}>
+              <p className="label">{group}</p>
+              <dl>{items.map(([sig, what]) => <div key={sig}><dt><code>{sig}</code></dt><dd>{what}</dd></div>)}</dl>
+            </div>
+          ))}
+        </details>
       </div>
-      <Simulator field={step.field} frames={run?.frames} />
+      {hasField && <Simulator field={f} frames={run?.frames} tag={run?.tag} />}
     </div>
   );
 }

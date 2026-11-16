@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import Icon from '../components/Icon';
 import { useGame, useNow } from '../components/Game';
+import { Rich } from '../components/steps';
 import { units, lessons, lessonOrder, quizSteps } from '../lib/curriculum';
 import { lessonStatus, xpToday, practiceSet, batteryNow, levelOf } from '../lib/game';
 
@@ -30,8 +31,8 @@ function Unit({ unit, number, firstIndex, state }) {
       <div className="card unit-head">
         <p className="label">Unit {number} · {done}/{pts.length} lessons</p>
         <h2 id={`unit-${unit.id}`}>{unit.title}</h2>
-        <p className="muted">{unit.blurb}</p>
-        {unit.matchDay && <details><summary>Why this matters on match day</summary><p className="small">{unit.matchDay}</p></details>}
+        <p className="muted"><Rich text={unit.blurb} /></p>
+        {unit.matchDay && <details><summary>Why this matters on match day</summary><p className="small"><Rich text={unit.matchDay} /></p></details>}
       </div>
       <div className="trace" style={{ height: pts.length * ROW }}>
         <svg viewBox={`0 0 280 ${pts.length * ROW}`} aria-hidden="true">

@@ -5,12 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from './Icon';
 import { useGame } from './Game';
-import { Card, Choice, Order, Blank, Predict, CodeStep, Rich, KINDS, isReady } from './steps';
+import { Card, Choice, Order, Blank, Predict, Match, CodeStep, Rich, KINDS, isReady } from './steps';
 import { grade } from '../lib/grade';
 import { isQuiz, isCode } from '../lib/curriculum';
 import { recordAnswer, drainBattery, batteryNow, HINT_COST } from '../lib/game';
 
-const QUIZ = { choice: Choice, order: Order, blank: Blank, predict: Predict };
+const QUIZ = { choice: Choice, order: Order, blank: Blank, predict: Predict, match: Match };
 
 // mode 'lesson': wrong answers drain the battery. mode 'practice': they do not.
 // onDone({ mistakes, hints, firstTry }) runs after the last step. onFlat() runs if the battery hits zero.
@@ -85,6 +85,7 @@ export default function Player({ steps, mode, onDone, onFlat }) {
         <h1 ref={heading} tabIndex={-1}><Rich text={step.title ?? step.prompt} /></h1>
         {step.type === 'card' && <Card step={step} />}
         {Body && <Body step={step} answer={answer} onAnswer={setAnswer} result={result} attempt={i} />}
+        {isCode(step) && step.code && <pre><code>{step.code}</code></pre>}
         {isCode(step) && <CodeStep step={step} passed={Boolean(result)} onPass={() => setResult({ correct: true })} />}
       </section>
 
@@ -100,7 +101,7 @@ export default function Player({ steps, mode, onDone, onFlat }) {
           </div>
         )}
         {result && !quiz && (
-          <div className="feedback good"><h2><Icon name="check" />Goal reached</h2></div>
+          <div className="feedback good"><h2><Icon name="check" />Solved</h2></div>
         )}
       </div>
 

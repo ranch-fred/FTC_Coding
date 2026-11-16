@@ -161,6 +161,20 @@ main { max-width: 960px; margin: 0 auto; padding: 16px 16px 96px; }
 .diagram { max-width: 320px; margin: 0 auto; width: 100%; color: var(--text); }
 .logs { max-height: 160px; overflow: auto; }
 
+.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.checks .ok { color: var(--ok); }
+.checks .no { color: var(--danger); }
+.script { margin: 6px 0 0; padding-left: 0; list-style: none; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.script .mono { color: var(--info); margin-right: 6px; }
+.api { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: var(--fs-sm); }
+.api summary { cursor: pointer; font-weight: 600; min-height: 28px; }
+.api dl { margin: 6px 0 12px; display: grid; gap: 6px; }
+.api dd { margin: 2px 0 0; color: var(--muted); }
+.match { display: grid; gap: 10px; }
+.match-row { grid-template-columns: 1fr; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); }
+.match-row select { width: 100%; }
+@media (min-width: 560px) { .match-row { grid-template-columns: 1fr 1fr; align-items: center; } }
+
 /* Celebration */
 .celebrate { text-align: center; display: grid; gap: 16px; justify-items: center; padding: 24px 0; }
 .medal { position: relative; width: 112px; height: 112px; display: grid; place-items: center; border-radius: 50%; background: var(--info); color: var(--on-solid); }

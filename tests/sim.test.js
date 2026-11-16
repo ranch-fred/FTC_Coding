@@ -39,7 +39,7 @@ test('start override and missing goal', () => {
 });
 
 test('infinite loops and bad arguments are errors, not hangs', () => {
-  assert.match(runProgram('while(true) robot.forward(1);', open).error, /Too many/);
+  assert.match(runProgram('while(true) robot.forward(1);', open).error, /simulated seconds/);
   assert.match(runProgram('robot.forward("a")', open).error, /needs a number/);
   assert.match(runProgram('while(true){robot.turn(1)}', open).error, /Too many movement steps/);
   assert.match(runProgram('this is not code', open).error, /./);
